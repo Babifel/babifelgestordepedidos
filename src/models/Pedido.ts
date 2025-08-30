@@ -183,7 +183,7 @@ export class PedidoModel {
       const collection = await PedidoModel.getCollection();
       
       // Preparar el objeto de actualización
-      const updateData: any = { estado: nuevoEstado };
+      const updateData: Partial<Pick<Pedido, 'estado' | 'observacionEntrega'>> = { estado: nuevoEstado };
       
       // Solo agregar observación si se proporciona y el estado es "entregado" o "devolucion"
       if (observacionEntrega && (nuevoEstado === "entregado" || nuevoEstado === "devolucion")) {
