@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     }));
 
     // Crear el pedido
-    const vendedoraFinal = vendedora || token.email || token.name || "Vendedora";
+    const vendedoraFinal = vendedora || session.user.email || session.user.name || "Vendedora";
     
     const resultado = await PedidoModel.crearPedido({
       productos: productosFormateados,
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       precioTotal: parseFloat(precioTotal),
       abonodinero: parseFloat(abonodinero),
       vendedora: vendedoraFinal,
-      correoVendedora: correoVendedora || token.email,
+      correoVendedora: correoVendedora || session.user.email,
       fechaEntregaDeseada: fechaEntregaDeseada ? new Date(fechaEntregaDeseada) : undefined,
     });
 
