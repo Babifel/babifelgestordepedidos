@@ -66,7 +66,12 @@ export default function DetallesPedidoPage() {
 
   const fetchPedido = useCallback(async () => {
     try {
-      const response = await fetch(`/api/pedidos/${pedidoId}`);
+      const response = await fetch(`/api/pedidos/${pedidoId}`, {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       if (response.ok) {
         const data = await response.json();
         setPedido(data.pedido);
@@ -149,6 +154,7 @@ export default function DetallesPedidoPage() {
 
       const response = await fetch(`/api/pedidos/${pedidoId}`, {
         method: "PATCH",
+        credentials: 'include',
         headers: {
           "Content-Type": "application/json",
         },

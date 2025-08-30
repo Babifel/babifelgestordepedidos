@@ -52,7 +52,12 @@ export default function DetallesPedidoPage() {
   useEffect(() => {
     const fetchPedido = async () => {
       try {
-        const response = await fetch(`/api/pedidos/${pedidoId}`);
+        const response = await fetch(`/api/pedidos/${pedidoId}`, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
         if (response.ok) {
           const data = await response.json();
           setPedido(data.pedido);

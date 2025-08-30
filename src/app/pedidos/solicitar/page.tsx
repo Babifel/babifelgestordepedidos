@@ -218,6 +218,7 @@ export default function SolicitarPedido() {
 
       const response = await fetch("/api/pedidos", {
         method: "POST",
+        credentials: 'include',
         headers: {
           "Content-Type": "application/json",
         },

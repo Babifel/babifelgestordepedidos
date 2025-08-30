@@ -99,7 +99,12 @@ export default function PedidosPage() {
         const url = `/api/pedidos?paginated=true&page=${page}&limit=${itemsPerPage}`;
         console.log("Fetching URL:", url);
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
         console.log("Response status:", response.status);
         if (response.ok) {
           const data = await response.json();

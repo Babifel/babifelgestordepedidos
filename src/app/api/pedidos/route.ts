@@ -1,21 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/lib/auth";
 import { PedidoModel } from "@/models/Pedido";
 
 export async function POST(request: NextRequest) {
   try {
     // Verificar autenticación
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    const session = await auth();
 
-    if (!token) {
+    if (!session || !session.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
     // Verificar que sea vendedora
-    if (token.role !== "vendedora") {
+    if (session.user.role !== "vendedora") {
       return NextResponse.json(
         { error: "Solo las vendedoras pueden crear pedidos" },
         { status: 403 }
@@ -147,12 +144,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+    const session = await auth();
     
-    if (!token) {
+    if (!session || !session.user) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
@@ -164,7 +158,7 @@ export async function GET(request: NextRequest) {
 
     let result;
 
-    if (token.role === "administradora") {
+    if (session.user.role === "administradora") {
       // Las administradoras pueden ver todos los pedidos
       if (paginated) {
         result = await PedidoModel.obtenerTodosPedidosPaginado(page, limit);
@@ -172,14 +166,14 @@ export async function GET(request: NextRequest) {
         const pedidos = await PedidoModel.obtenerTodosPedidos();
         result = { pedidos };
       }
-    } else if (token.role === "vendedora") {
+    } else if (session.user.role === "vendedora") {
       // Las vendedoras solo ven sus propios pedidos
       // Buscar por email, name o cualquier combinación
       const criteriosBusqueda = [
-        token.email,
-        token.name,
-        token.email || token.name,
-        token.name || token.email
+        session.user.email,
+        session.user.name,
+        session.user.email || session.user.name,
+        session.user.name || session.user.email
       ].filter((criterio): criterio is string => Boolean(criterio));
       
       if (paginated && criteriosBusqueda.length > 0) {

@@ -70,7 +70,12 @@ export default function DashboardPage() {
         if (append) setLoadingMore(true);
 
         const url = `/api/pedidos?paginated=true&page=${page}&limit=${itemsPerPage}`;
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
         if (response.ok) {
           const data = await response.json();

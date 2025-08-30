@@ -12,6 +12,7 @@ export default function DescargasDePedidos() {
       
       const response = await fetch('/api/pedidos/export-excel', {
         method: 'GET',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },

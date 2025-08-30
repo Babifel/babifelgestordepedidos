@@ -56,7 +56,12 @@ export default function UsuariosPage() {
 
   const fetchUsuarios = useCallback(async () => {
     try {
-      const response = await fetch("/api/usuarios");
+      const response = await fetch("/api/usuarios", {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -90,6 +95,7 @@ export default function UsuariosPage() {
     try {
       const response = await fetch("/api/usuarios", {
         method: "POST",
+        credentials: 'include',
         headers: {
           "Content-Type": "application/json",
         },
@@ -124,6 +130,10 @@ export default function UsuariosPage() {
     try {
       const response = await fetch(`/api/usuarios?id=${deleteModal.userId}`, {
         method: "DELETE",
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
       const data = await response.json();
