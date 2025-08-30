@@ -181,15 +181,19 @@ export class PedidoModel {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       const collection = await PedidoModel.getCollection();
-      
+
       // Preparar el objeto de actualización
-      const updateData: Partial<Pick<Pedido, 'estado' | 'observacionEntrega'>> = { estado: nuevoEstado };
-      
+      const updateData: Partial<Pick<Pedido, "estado" | "observacionEntrega">> =
+        { estado: nuevoEstado };
+
       // Solo agregar observación si se proporciona y el estado es "entregado" o "devolucion"
-      if (observacionEntrega && (nuevoEstado === "entregado" || nuevoEstado === "devolucion")) {
+      if (
+        observacionEntrega &&
+        (nuevoEstado === "entregado" || nuevoEstado === "devolucion")
+      ) {
         updateData.observacionEntrega = observacionEntrega;
       }
-      
+
       const result = await collection.updateOne(
         { _id: new ObjectId(pedidoId) },
         { $set: updateData }
@@ -248,16 +252,16 @@ export class PedidoModel {
       const collection = await PedidoModel.getCollection();
       const tresMesesAtras = new Date();
       tresMesesAtras.setMonth(tresMesesAtras.getMonth() - 3);
-      
+
       const pedidos = await collection
         .find({
           fechaCreacion: {
-            $gte: tresMesesAtras
-          }
+            $gte: tresMesesAtras,
+          },
         })
         .sort({ fechaCreacion: -1 })
         .toArray();
-      
+
       return pedidos;
     } catch (error) {
       console.error("Error al obtener pedidos de los últimos 3 meses:", error);
@@ -265,32 +269,37 @@ export class PedidoModel {
     }
   }
 
-  static async obtenerPedidosUltimosTresMesesPorVendedora(vendedora: string): Promise<Pedido[]> {
+  static async obtenerPedidosUltimosTresMesesPorVendedora(
+    vendedora: string
+  ): Promise<Pedido[]> {
     try {
       const collection = await PedidoModel.getCollection();
       const tresMesesAtras = new Date();
       tresMesesAtras.setMonth(tresMesesAtras.getMonth() - 3);
-      
+
       // Crear criterios de búsqueda múltiples
       const criterios = [vendedora];
       const query = {
         fechaCreacion: {
-          $gte: tresMesesAtras
+          $gte: tresMesesAtras,
         },
         $or: [
           { vendedora: { $in: criterios } },
           { correoVendedora: { $in: criterios } },
         ],
       };
-      
+
       const pedidos = await collection
         .find(query)
         .sort({ fechaCreacion: -1 })
         .toArray();
-      
+
       return pedidos;
     } catch (error) {
-      console.error("Error al obtener pedidos de los últimos 3 meses por vendedora:", error);
+      console.error(
+        "Error al obtener pedidos de los últimos 3 meses por vendedora:",
+        error
+      );
       return [];
     }
   }
@@ -307,5 +316,6 @@ export const Pedido = {
   findById: PedidoModel.obtenerPedidoPorId,
   findByIdAndVendedora: PedidoModel.obtenerPedidoPorIdYVendedora,
   findLastThreeMonths: PedidoModel.obtenerPedidosUltimosTresMeses,
-  findLastThreeMonthsByVendedora: PedidoModel.obtenerPedidosUltimosTresMesesPorVendedora,
+  findLastThreeMonthsByVendedora:
+    PedidoModel.obtenerPedidosUltimosTresMesesPorVendedora,
 };
