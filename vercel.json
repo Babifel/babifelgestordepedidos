@@ -1,10 +1,22 @@
 {
   "env": {
-    "NEXTAUTH_URL": "https://babifelgestordepedidos.vercel.app"
+    "NEXTAUTH_URL": "https://babifelgestordepedidos.vercel.app",
+    "NEXTAUTH_URL_INTERNAL": "https://babifelgestordepedidos.vercel.app"
   },
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 30
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ]
 }

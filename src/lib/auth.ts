@@ -43,25 +43,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   cookies: {
     sessionToken: {
-      name: process.env.NODE_ENV === "production" ? "__Secure-authjs.session-token" : "authjs.session-token",
+      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
       options: {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
+        domain: process.env.NODE_ENV === "production" ? ".vercel.app" : undefined,
       },
     },
     callbackUrl: {
-      name: process.env.NODE_ENV === "production" ? "__Secure-authjs.callback-url" : "authjs.callback-url",
+      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.callback-url" : "next-auth.callback-url",
       options: {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
+        domain: process.env.NODE_ENV === "production" ? ".vercel.app" : undefined,
       },
     },
     csrfToken: {
-      name: process.env.NODE_ENV === "production" ? "__Host-authjs.csrf-token" : "authjs.csrf-token",
+      name: process.env.NODE_ENV === "production" ? "__Host-next-auth.csrf-token" : "next-auth.csrf-token",
       options: {
         httpOnly: true,
         sameSite: "lax",
@@ -98,4 +100,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   debug: process.env.NODE_ENV === "development",
   trustHost: true,
   secret: process.env.NEXTAUTH_SECRET,
+  useSecureCookies: process.env.NODE_ENV === "production",
+  events: {
+    async signIn({ user, account, profile, isNewUser }) {
+      console.log("SignIn event:", { user: user?.email, account: account?.provider });
+    },
+    async signOut({ session, token }) {
+      console.log("SignOut event:", { user: session?.user?.email || token?.email });
+    },
+    async session({ session, token }) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("Session event:", { user: session?.user?.email, role: session?.user?.role });
+      }
+    },
+  },
 });

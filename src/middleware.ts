@@ -23,6 +23,7 @@ export async function middleware(request: NextRequest) {
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
       secureCookie: process.env.NODE_ENV === "production",
+      cookieName: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
     });
 
     console.log("Middleware - Pathname:", pathname);
@@ -73,5 +74,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/pedidos/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/pedidos/:path*", "/login", "/register"],
 };
