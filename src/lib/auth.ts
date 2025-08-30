@@ -102,13 +102,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   useSecureCookies: process.env.NODE_ENV === "production",
   events: {
-    async signIn({ user, account, profile, isNewUser }) {
+    async signIn({ user, account }) {
       console.log("SignIn event:", { user: user?.email, account: account?.provider });
     },
-    async signOut({ session, token }) {
-      console.log("SignOut event:", { user: session?.user?.email || token?.email });
+    async signOut(message) {
+      if ('token' in message && message.token?.email) {
+        console.log("SignOut event:", { user: message.token.email });
+      } else {
+        console.log("SignOut event: User logged out");
+      }
     },
-    async session({ session, token }) {
+    async session({ session }) {
       if (process.env.NODE_ENV === "development") {
         console.log("Session event:", { user: session?.user?.email, role: session?.user?.role });
       }
