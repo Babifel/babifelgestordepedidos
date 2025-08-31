@@ -24,18 +24,20 @@ export interface UserWithoutPassword {
 }
 
 export const UserModel = {
-  async createUser(userData: Omit<User, "_id" | "createdAt" | "updatedAt">): Promise<UserWithoutPassword> {
+  async createUser(
+    userData: Omit<User, "_id" | "createdAt" | "updatedAt">
+  ): Promise<UserWithoutPassword> {
     const db = await getMongoDb();
-    
+
     // Verificar si el usuario ya existe
     const existingUser = await this.findByEmail(userData.email);
     if (existingUser) {
       throw new Error("El usuario ya existe");
     }
-    
+
     // Encriptar contraseña
     const hashedPassword = await bcrypt.hash(userData.password, 10);
-    
+
     // Crear nuevo usuario
     const now = new Date();
     const newUser: User = {
@@ -44,49 +46,63 @@ export const UserModel = {
       createdAt: now,
       updatedAt: now,
     };
-    
+
     const result = await db.collection("users").insertOne(newUser);
-    
+
     // Devolver usuario sin contraseña
-    const { password, ...userWithoutPassword } = newUser;
+    const userWithoutPassword = Object.fromEntries(
+      Object.entries(newUser).filter(([key]) => key !== "password")
+    ) as Omit<User, "password">;
+
     return {
       ...userWithoutPassword,
       _id: result.insertedId,
     };
   },
-  
+
   async findByEmail(email: string): Promise<User | null> {
     const db = await getMongoDb();
     return db.collection("users").findOne<User>({ email });
   },
-  
-  async authenticateUser(email: string, password: string): Promise<User | null> {
+
+  async authenticateUser(
+    email: string,
+    password: string
+  ): Promise<User | null> {
     const user = await this.findByEmail(email);
-    
+
     if (!user) {
       return null;
     }
-    
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    
+
     if (!isPasswordValid) {
       return null;
     }
-    
+
     return user;
   },
-  
+
   async obtenerTodosLosUsuarios(): Promise<UserWithoutPassword[]> {
     const db = await getMongoDb();
-    const users = await db.collection("users").find({}).toArray() as User[];
-    
+    const users = (await db.collection("users").find({}).toArray()) as User[];
+
     // Eliminar contraseñas antes de devolver
-    return users.map(({ password, ...rest }) => rest);
+    return users.map((user) => {
+      // Desestructurar omitiendo la propiedad password
+      const userWithoutPassword = Object.fromEntries(
+        Object.entries(user).filter(([key]) => key !== "password")
+      ) as UserWithoutPassword;
+      return userWithoutPassword;
+    });
   },
-  
+
   async eliminarUsuario(userId: string): Promise<boolean> {
     const db = await getMongoDb();
-    const result = await db.collection("users").deleteOne({ _id: new ObjectId(userId) });
+    const result = await db
+      .collection("users")
+      .deleteOne({ _id: new ObjectId(userId) });
     return result.deletedCount === 1;
-  }
+  },
 };

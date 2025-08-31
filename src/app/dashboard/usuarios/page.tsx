@@ -57,9 +57,9 @@ export default function UsuariosPage() {
   const fetchUsuarios = useCallback(async () => {
     try {
       const response = await fetch("/api/usuarios", {
-        credentials: 'include',
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
       const data = await response.json();
@@ -95,7 +95,7 @@ export default function UsuariosPage() {
     try {
       const response = await fetch("/api/usuarios", {
         method: "POST",
-        credentials: 'include',
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -130,9 +130,9 @@ export default function UsuariosPage() {
     try {
       const response = await fetch(`/api/usuarios?id=${deleteModal.userId}`, {
         method: "DELETE",
-        credentials: 'include',
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
@@ -401,9 +401,11 @@ export default function UsuariosPage() {
                                   : "Vendedora"}
                               </span>
                               <span className="text-purple-200 text-xs">
-                                {new Date(
-                                  usuario.createdAt
-                                ).toLocaleDateString()}
+                                {usuario.createdAt
+                                  ? new Date(
+                                      usuario.createdAt
+                                    ).toLocaleDateString()
+                                  : "Fecha no disponible"}
                               </span>
                             </div>
                           </div>

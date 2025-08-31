@@ -33,7 +33,7 @@ export interface Pedido {
 export class PedidoModel {
   private static async getCollection(): Promise<Collection<Pedido>> {
     const client = await clientPromise;
-    const db = client.db("yeny-crm");
+    const db = client.db("babifel");
     return db.collection<Pedido>("pedidos");
   }
 
@@ -274,15 +274,11 @@ export class PedidoModel {
   ): Promise<Pedido[]> {
     try {
       const collection = await PedidoModel.getCollection();
-      const tresMesesAtras = new Date();
-      tresMesesAtras.setMonth(tresMesesAtras.getMonth() - 3);
-
+      
+      // Obtener todos los pedidos de la vendedora, sin filtro de fecha
       // Crear criterios de búsqueda múltiples
       const criterios = [vendedora];
       const query = {
-        fechaCreacion: {
-          $gte: tresMesesAtras,
-        },
         $or: [
           { vendedora: { $in: criterios } },
           { correoVendedora: { $in: criterios } },
@@ -297,7 +293,7 @@ export class PedidoModel {
       return pedidos;
     } catch (error) {
       console.error(
-        "Error al obtener pedidos de los últimos 3 meses por vendedora:",
+        "Error al obtener pedidos por vendedora:",
         error
       );
       return [];

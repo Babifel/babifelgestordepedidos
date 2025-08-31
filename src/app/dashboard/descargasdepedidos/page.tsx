@@ -5,10 +5,12 @@ import { FaFileExcel, FaSpinner } from 'react-icons/fa';
 
 export default function DescargasDePedidos() {
   const [downloadingExcel, setDownloadingExcel] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleDownloadExcel = async () => {
     try {
       setDownloadingExcel(true);
+      setErrorMessage(null);
       
       const response = await fetch('/api/pedidos/export-excel', {
         method: 'GET',
@@ -19,7 +21,17 @@ export default function DescargasDePedidos() {
       });
 
       if (!response.ok) {
-        throw new Error('Error al descargar el archivo Excel');
+        const errorData = await response.json().catch(() => null);
+        if (errorData && errorData.error) {
+          // Mostrar mensaje específico del servidor
+          if (errorData.error === "No tienes pedidos registrados en los últimos 3 meses") {
+            throw new Error("No tienes pedidos registrados en los últimos 3 meses. Intenta crear algunos pedidos primero.");
+          } else {
+            throw new Error(`${errorData.error}`);
+          }
+        } else {
+          throw new Error(`Error al descargar el archivo Excel (código: ${response.status})`);
+        }
       }
 
       // Obtener el nombre del archivo desde el header Content-Disposition
@@ -46,7 +58,7 @@ export default function DescargasDePedidos() {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error al descargar Excel:', error);
-      alert('Error al descargar el archivo Excel. Por favor, inténtalo de nuevo.');
+      setErrorMessage(error instanceof Error ? error.message : 'Error al descargar el archivo Excel');
     } finally {
       setDownloadingExcel(false);
     }
@@ -78,7 +90,7 @@ export default function DescargasDePedidos() {
                 Exportar Pedidos a Excel
               </h3>
               <p className="text-sm text-purple-200 mb-6">
-                Descarga tus pedidos de los últimos 3 meses en formato Excel.
+                Descarga todos tus pedidos disponibles en formato Excel.
                 El archivo incluirá información detallada de cada uno de tus pedidos, clientes y productos.
               </p>
               
@@ -95,10 +107,21 @@ export default function DescargasDePedidos() {
                 ) : (
                   <>
                     <FaFileExcel className="-ml-1 mr-3 h-5 w-5" />
-                    Descargar Mis Pedidos (Últimos 3 meses)
+                    Descargar Todos Mis Pedidos
                   </>
                 )}
               </button>
+              
+              {errorMessage && (
+                <div className="mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-white text-sm">
+                  <p className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    {errorMessage}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -119,7 +142,7 @@ export default function DescargasDePedidos() {
                       Período de datos
                     </dt>
                     <dd className="text-lg font-medium text-white">
-                      Últimos 3 meses
+                      Todos los pedidos
                     </dd>
                   </dl>
                 </div>

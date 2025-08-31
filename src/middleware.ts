@@ -1,47 +1,53 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Verificar autenticación usando JWT directamente (compatible con Edge)
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
   // Rutas públicas (no requieren autenticación)
-  const publicRoutes = ['/login', '/register'];
+  const publicRoutes = ["/login", "/register"];
+
+  // Ruta raíz - permitir acceso público, pero redirigir usuarios autenticados según su rol
+  if (pathname === "/") {
+    if (token) {
+      const userRole = token.role as string;
+      if (userRole === "administradora") {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      } else {
+        return NextResponse.redirect(new URL("/pedidos", request.url));
+      }
+    }
+    return NextResponse.next();
+  }
+
+  // Otras rutas públicas
   if (publicRoutes.includes(pathname)) {
     return NextResponse.next();
   }
 
-  // Verificar autenticación usando JWT directamente (compatible con Edge)
-  const token = await getToken({ 
-    req: request, 
-    secret: process.env.NEXTAUTH_SECRET 
-  });
-
   // Si no hay token, redirigir a login
   if (!token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // Control de acceso basado en roles
   const userRole = token.role as string;
 
   // Rutas exclusivas para administradoras
-  if (pathname.startsWith('/dashboard') && userRole !== 'administradora') {
-    return NextResponse.redirect(new URL('/pedidos', request.url));
+  if (pathname.startsWith("/dashboard") && userRole !== "administradora") {
+    return NextResponse.redirect(new URL("/pedidos", request.url));
   }
 
   // Rutas para vendedoras (todas las vendedoras pueden acceder a /pedidos)
-  if (pathname.startsWith('/pedidos')) {
+  if (pathname.startsWith("/pedidos")) {
     return NextResponse.next();
-  }
-
-  // Ruta raíz - redirigir según rol
-  if (pathname === '/') {
-    if (userRole === 'administradora') {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    } else {
-      return NextResponse.redirect(new URL('/pedidos', request.url));
-    }
   }
 
   return NextResponse.next();
@@ -57,6 +63,6 @@ export const config = {
      * 3. /public (archivos estáticos)
      * 4. /favicon.ico, /robots.txt, etc.
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };

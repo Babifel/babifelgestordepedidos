@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { Pedido } from "@/models/Pedido";
+import { Pedido, NumeroTelefonico, ProductoPedido } from "@/models/Pedido";
 import * as XLSX from "xlsx";
 
 export async function GET() {
@@ -11,30 +11,62 @@ export async function GET() {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // Obtener pedidos de los últimos 3 meses filtrados por la vendedora logueada
-    const vendedora = session.user.email || session.user.name || "";
-    const pedidos = await Pedido.findLastThreeMonthsByVendedora(vendedora);
+    // Fecha de inicio para filtrar pedidos (últimos 3 meses)
+    const fechaInicio = new Date();
+    fechaInicio.setMonth(fechaInicio.getMonth() - 3);
 
-    if (pedidos.length === 0) {
-      return NextResponse.json(
-        { error: "No tienes pedidos en los últimos 3 meses" },
-        { status: 404 }
-      );
+    let pedidos: Pedido[] = [];
+
+    // Verificar si el usuario es administrador o vendedora
+    const esAdmin = session.user.role === "administradora";
+    const correoUsuario = session.user.email || "";
+
+    if (esAdmin) {
+      // Si es administradora, obtener todos los pedidos
+      pedidos = await Pedido.findAll();
+    } else {
+      // Si es vendedora, obtener solo sus pedidos usando el correo
+      pedidos = await Pedido.findLastThreeMonthsByVendedora(correoUsuario);
+    }
+
+    // Filtrar pedidos para obtener los de aproximadamente tres meses
+    let pedidosFiltrados: Pedido[];
+    
+    if (esAdmin) {
+      // Para administradoras, aplicar filtro de fecha
+      pedidosFiltrados = pedidos.filter((pedido: Pedido) => {
+        const fechaPedido =
+          pedido.fechaCreacion instanceof Date
+            ? pedido.fechaCreacion
+            : new Date(pedido.fechaCreacion);
+        return fechaPedido >= fechaInicio;
+      });
+    } else {
+      // Para vendedoras, el método ya filtra por fecha
+      pedidosFiltrados = pedidos;
+    }
+
+    if (pedidosFiltrados.length === 0) {
+      const mensaje = esAdmin
+        ? "No hay pedidos registrados en los últimos 3 meses"
+        : "No tienes pedidos registrados en los últimos 3 meses";
+
+      return NextResponse.json({ error: mensaje }, { status: 404 });
     }
 
     // Preparar datos para Excel
-    const excelData = pedidos.map((pedido, index) => {
+    const excelData = pedidosFiltrados.map((pedido, index) => {
       // Formatear productos
       const productosTexto = pedido.productos
         .map(
-          (p) =>
+          (p: ProductoPedido) =>
             `${p.nombreProducto} (${p.cantidades} unidades) - ${p.descripcionProducto}`
         )
         .join("; ");
 
       // Formatear números telefónicos
       const telefonosTexto = pedido.numerosTelefonicos
-        .map((t) => `${t.numero} (${t.tipo})`)
+        .map((t: NumeroTelefonico) => `${t.numero} (${t.tipo})`)
         .join("; ");
 
       return {

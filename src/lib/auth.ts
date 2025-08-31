@@ -1,11 +1,12 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { UserModel } from "@/models/User";
+import { UserModel, UserRole } from "@/models/User";
 import { NextAuthConfig } from "next-auth";
 
 export const authConfig: NextAuthConfig = {
   providers: [
     CredentialsProvider({
+      id: "credentials",
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
@@ -18,8 +19,8 @@ export const authConfig: NextAuthConfig = {
 
         try {
           const user = await UserModel.authenticateUser(
-            credentials.email,
-            credentials.password
+            credentials.email as string,
+            credentials.password as string
           );
 
           if (!user) {
@@ -30,7 +31,7 @@ export const authConfig: NextAuthConfig = {
             id: user._id?.toString() || "",
             email: user.email,
             name: user.name,
-            role: user.role,
+            role: user.role as UserRole,
           };
         } catch (error) {
           console.error("Error en autenticación:", error);
@@ -54,7 +55,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
         session.user.name = token.name as string;
-        session.user.role = token.role as string;
+        session.user.role = token.role as UserRole;
       }
       return session;
     },
@@ -68,4 +69,10 @@ export const authConfig: NextAuthConfig = {
   secret: process.env.NEXTAUTH_SECRET,
 };
 
+// Exportamos las funciones de NextAuth con tipos explícitos para evitar errores de TypeScript
+// Exportamos las funciones de NextAuth
+// Aseguramos que auth() pueda ser llamado sin parámetros o con un objeto de opciones
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
+
+// Eliminamos la función getAuth ya que no es necesaria
+// La función auth() de NextAuth ya maneja correctamente los casos necesarios
