@@ -1,14 +1,15 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { UserModel } from "@/models/User";
+import { NextAuthConfig } from "next-auth";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const authConfig: NextAuthConfig = {
   providers: [
     CredentialsProvider({
-      name: "credentials",
+      name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
+        password: { label: "Contraseña", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -17,19 +18,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         try {
           const user = await UserModel.authenticateUser(
-            credentials.email as string,
-            credentials.password as string
+            credentials.email,
+            credentials.password
           );
 
-          if (user) {
-            return {
-              id: user._id!.toString(),
-              email: user.email,
-              name: user.name,
-              role: user.role,
-            };
+          if (!user) {
+            return null;
           }
-          return null;
+
+          return {
+            id: user._id?.toString() || "",
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          };
         } catch (error) {
           console.error("Error en autenticación:", error);
           return null;
@@ -37,85 +39,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 días
-  },
-  cookies: {
-    sessionToken: {
-      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.session-token" : "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        domain: process.env.NODE_ENV === "production" ? ".vercel.app" : undefined,
-      },
-    },
-    callbackUrl: {
-      name: process.env.NODE_ENV === "production" ? "__Secure-next-auth.callback-url" : "next-auth.callback-url",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        domain: process.env.NODE_ENV === "production" ? ".vercel.app" : undefined,
-      },
-    },
-    csrfToken: {
-      name: process.env.NODE_ENV === "production" ? "__Host-next-auth.csrf-token" : "next-auth.csrf-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-  },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
         token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.sub!;
-        session.user.role = token.role;
+      if (token && session.user) {
+        session.user.id = token.id as string;
+        session.user.email = token.email as string;
+        session.user.name = token.name as string;
+        session.user.role = token.role as string;
       }
       return session;
-    },
-    async redirect({ url, baseUrl }) {
-      // Permite redirecciones a URLs relativas o del mismo dominio
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      // Permite redirecciones al mismo dominio
-      else if (new URL(url).origin === baseUrl) return url;
-      return baseUrl;
     },
   },
   pages: {
     signIn: "/login",
   },
-  debug: process.env.NODE_ENV === "development",
-  trustHost: true,
-  secret: process.env.NEXTAUTH_SECRET,
-  useSecureCookies: process.env.NODE_ENV === "production",
-  events: {
-    async signIn({ user, account }) {
-      console.log("SignIn event:", { user: user?.email, account: account?.provider });
-    },
-    async signOut(message) {
-      if ('token' in message && message.token?.email) {
-        console.log("SignOut event:", { user: message.token.email });
-      } else {
-        console.log("SignOut event: User logged out");
-      }
-    },
-    async session({ session }) {
-      if (process.env.NODE_ENV === "development") {
-        console.log("Session event:", { user: session?.user?.email, role: session?.user?.role });
-      }
-    },
+  session: {
+    strategy: "jwt",
   },
-});
+  secret: process.env.NEXTAUTH_SECRET,
+};
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
