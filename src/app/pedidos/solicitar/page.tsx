@@ -41,8 +41,8 @@ export default function SolicitarPedido() {
   // Redireccionar si no está autenticado o no es vendedora
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Cargando...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
+        <span className="loader"></span>
       </div>
     );
   }
@@ -213,12 +213,12 @@ export default function SolicitarPedido() {
       const dataToSend = {
         ...formData,
         vendedora: user.name || user.email,
-      correoVendedora: user.email,
+        correoVendedora: user.email,
       };
 
       const response = await fetch("/api/pedidos", {
         method: "POST",
-        credentials: 'include',
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
