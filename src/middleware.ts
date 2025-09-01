@@ -1,31 +1,16 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { getTokenFromCookies, decodeTokenPayload } from "@/lib/jwt";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Verificar autenticación usando JWT directamente (compatible con Edge)
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
+  // Obtener token de las cookies
+  const cookieHeader = request.headers.get('cookie');
+  const token = getTokenFromCookies(cookieHeader);
+  
   // Rutas públicas (no requieren autenticación)
   const publicRoutes = ["/login", "/register"];
-
-  // Ruta raíz - permitir acceso público, pero redirigir usuarios autenticados según su rol
-  if (pathname === "/") {
-    if (token) {
-      const userRole = token.role as string;
-      if (userRole === "administradora") {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-      } else {
-        return NextResponse.redirect(new URL("/pedidos", request.url));
-      }
-    }
-    return NextResponse.next();
-  }
 
   // Otras rutas públicas
   if (publicRoutes.includes(pathname)) {
@@ -37,17 +22,37 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Control de acceso basado en roles
-  const userRole = token.role as string;
-
-  // Rutas exclusivas para administradoras
-  if (pathname.startsWith("/dashboard") && userRole !== "administradora") {
-    return NextResponse.redirect(new URL("/pedidos", request.url));
+  // Decodificar el token para obtener el rol
+  const payload = decodeTokenPayload(token);
+  if (!payload) {
+    // Token inválido, redirigir a login
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Rutas para vendedoras (todas las vendedoras pueden acceder a /pedidos)
+  const userRole = payload.role;
+
+  // Ruta raíz - redirigir según el rol
+  if (pathname === "/") {
+    if (userRole === "administradora") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    } else if (userRole === "vendedora") {
+      return NextResponse.redirect(new URL("/pedidos", request.url));
+    }
+  }
+
+  // Control de acceso basado en roles
+  if (pathname.startsWith("/dashboard")) {
+    if (userRole !== "administradora") {
+      // Vendedoras no pueden acceder al dashboard
+      return NextResponse.redirect(new URL("/pedidos", request.url));
+    }
+  }
+
   if (pathname.startsWith("/pedidos")) {
-    return NextResponse.next();
+    // Tanto administradoras como vendedoras pueden acceder a pedidos
+    if (userRole !== "administradora" && userRole !== "vendedora") {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
   }
 
   return NextResponse.next();

@@ -1,13 +1,16 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { NextRequest, NextResponse } from "next/server";
+import { getTokenFromCookies, verifyToken } from "@/lib/jwt";
 import { Pedido, NumeroTelefonico, ProductoPedido } from "@/models/Pedido";
 import * as XLSX from "xlsx";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Verificar autenticación
-    const session = await auth();
-    if (!session) {
+    const cookieHeader = request.headers.get('cookie');
+    const token = getTokenFromCookies(cookieHeader);
+    const payload = verifyToken(token || '');
+    
+    if (!payload) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
@@ -18,8 +21,8 @@ export async function GET() {
     let pedidos: Pedido[] = [];
 
     // Verificar si el usuario es administrador o vendedora
-    const esAdmin = session.user.role === "administradora";
-    const correoUsuario = session.user.email || "";
+    const esAdmin = payload.role === "administradora";
+    const correoUsuario = payload.email || "";
 
     if (esAdmin) {
       // Si es administradora, obtener todos los pedidos

@@ -65,6 +65,22 @@ export const UserModel = {
     return db.collection("users").findOne<User>({ email });
   },
 
+  async findById(userId: string): Promise<UserWithoutPassword | null> {
+    const db = await getMongoDb();
+    const user = await db.collection("users").findOne<User>({ _id: new ObjectId(userId) });
+    
+    if (!user) {
+      return null;
+    }
+
+    // Devolver usuario sin contraseña
+    const userWithoutPassword = Object.fromEntries(
+      Object.entries(user).filter(([key]) => key !== "password")
+    ) as UserWithoutPassword;
+    
+    return userWithoutPassword;
+  },
+
   async authenticateUser(
     email: string,
     password: string

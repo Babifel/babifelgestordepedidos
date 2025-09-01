@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useRequireRole, useAuth } from "@/hooks/useAuth";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -47,7 +47,8 @@ interface Pedido {
 }
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading } = useRequireRole("administradora");
+  const { logout } = useAuth();
   const router = useRouter();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,18 +111,18 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
-    if (status === "loading") return;
-    if (!session) {
+    if (authLoading) return;
+    if (!user) {
       router.push("/login");
       return;
     }
-    if (session.user.role !== "administradora") {
+    if (user.role !== "administradora") {
       router.push("/pedidos");
       return;
     }
 
     fetchPedidos(1);
-  }, [session, status, router, fetchPedidos]);
+  }, [user, authLoading, router, fetchPedidos]);
 
   const getEstadoColor = (estado: string) => {
     switch (estado) {
@@ -252,7 +253,7 @@ export default function DashboardPage() {
     return { chartData, totalEntregado };
   };
 
-  if (status === "loading") {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
         <span className="loader"></span>
@@ -260,7 +261,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!session || session.user.role !== "administradora") {
+  if (!user || user.role !== "administradora") {
     return null;
   }
 
@@ -334,7 +335,7 @@ export default function DashboardPage() {
         </nav>
         <div className="absolute bottom-4 left-4 right-4">
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => logout()}
             className="cursor-pointer  w-full bg-red-600/50 hover:bg-red-600/30 text-red-300 hover:text-red-200 px-4 py-3 rounded-lg transition-colors duration-200 border border-red-500/30"
           >
             Cerrar Sesión
@@ -358,7 +359,7 @@ export default function DashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
-                <p className="text-purple-200">Bienvenida, {session.user.name}</p>
+                <p className="text-purple-200">Bienvenida, {user.name}</p>
               </div>
 
             </div>

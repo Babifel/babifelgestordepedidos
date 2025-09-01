@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getTokenFromCookies, verifyToken } from '@/lib/jwt';
 import { Pedido } from '../../../../models/Pedido';
 import { ObjectId } from 'mongodb';
 
@@ -9,9 +9,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
+    const cookieHeader = request.headers.get('cookie');
+    const token = getTokenFromCookies(cookieHeader);
+    const payload = verifyToken(token || '');
     
-    if (!session?.user?.email) {
+    if (!payload?.email) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
@@ -31,10 +33,10 @@ export async function GET(
     // Solo administradoras pueden ver cualquier pedido
     // Las vendedoras solo pueden ver sus propios pedidos
     let pedido;
-    if (session.user.role === 'administradora') {
+    if (payload.role === 'administradora') {
       pedido = await Pedido.findById(id);
-    } else if (session.user.role === 'vendedora') {
-      pedido = await Pedido.findByIdAndVendedora(id, session.user.email!);
+    } else if (payload.role === 'vendedora') {
+      pedido = await Pedido.findByIdAndVendedora(id, payload.email!);
     } else {
       return NextResponse.json(
         { error: 'Acceso denegado' },
@@ -65,9 +67,11 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await auth();
+    const cookieHeader = request.headers.get('cookie');
+    const token = getTokenFromCookies(cookieHeader);
+    const payload = verifyToken(token || '');
     
-    if (!session || !session.user) {
+    if (!payload) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
@@ -75,7 +79,7 @@ export async function PATCH(
     }
 
     // Solo administradoras pueden actualizar el estado de los pedidos
-    if (session.user.role !== 'administradora') {
+    if (payload.role !== 'administradora') {
       return NextResponse.json(
         { error: 'Solo las administradoras pueden actualizar el estado de los pedidos' },
         { status: 403 }

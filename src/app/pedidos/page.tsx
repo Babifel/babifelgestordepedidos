@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useRequireAuth, useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
@@ -36,7 +36,8 @@ interface Pedido {
 }
 
 export default function PedidosPage() {
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading } = useRequireAuth();
+  const { logout } = useAuth();
   const router = useRouter();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,18 +151,18 @@ export default function PedidosPage() {
   );
 
   useEffect(() => {
-    console.log("useEffect triggered:", { status, session: session?.user });
-    if (status === "loading") return; // Aún cargando
+    console.log("useEffect triggered:", { authLoading, user });
+    if (authLoading) return; // Aún cargando
 
-    if (!session) {
-      console.log("No session, redirecting to login");
+    if (!user) {
+      console.log("No user, redirecting to login");
       router.push("/login");
       return;
     }
 
     // Verificar que sea vendedora
-    if (session.user?.role !== "vendedora") {
-      console.log("User is not vendedora, role:", session.user?.role);
+    if (user.role !== "vendedora") {
+      console.log("User is not vendedora, role:", user.role);
       router.push("/dashboard"); // Redirigir a dashboard si es administradora
       return;
     }
@@ -169,18 +170,18 @@ export default function PedidosPage() {
     console.log("User is vendedora, fetching pedidos");
     // Cargar pedidos
     fetchPedidos(false, 1);
-  }, [session, status, router, fetchPedidos]);
+  }, [user, authLoading, router, fetchPedidos]);
 
   // Polling para actualizar pedidos cada 30 segundos
   useEffect(() => {
-    if (!session || session.user?.role !== "vendedora") return;
+    if (!user || user.role !== "vendedora") return;
 
     const interval = setInterval(() => {
       fetchPedidos(true, 1, false); // true indica que es una actualización automática
     }, 30000); // 30 segundos
 
     return () => clearInterval(interval);
-  }, [session, fetchPedidos]);
+  }, [user, fetchPedidos]);
 
   // Función para refrescar manualmente
   const handleManualRefresh = () => {
@@ -211,7 +212,7 @@ export default function PedidosPage() {
     }
   };
 
-  if (status === "loading") {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
         <span className="loader"></span>
@@ -219,7 +220,7 @@ export default function PedidosPage() {
     );
   }
 
-  if (!session || session.user?.role !== "vendedora") {
+  if (!user || user.role !== "vendedora") {
     return null;
   }
 
@@ -287,7 +288,7 @@ export default function PedidosPage() {
         </nav>
         <div className="absolute bottom-4 left-4 right-4">
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => logout()}
             className="cursor-pointer w-full bg-red-600/20 hover:bg-red-600/30 text-red-300 hover:text-red-200 px-4 py-3 rounded-lg transition-colors duration-200 border border-red-500/30"
           >
             Cerrar Sesión
@@ -309,7 +310,7 @@ export default function PedidosPage() {
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-white mb-2">Mis Pedidos</h1>
             <p className="text-purple-200">
-              Bienvenido, {session.user?.name || session.user?.email}
+              Bienvenido, {user.name || user.email}
             </p>
           </div>
           {/* Filtros */}

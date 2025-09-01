@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useRequireAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import NextImage from "next/image";
@@ -9,7 +9,7 @@ import { BiSpreadsheet } from "react-icons/bi";
 import { MdFormatListBulletedAdd } from "react-icons/md";
 
 export default function SolicitarPedido() {
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading } = useRequireAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +39,7 @@ export default function SolicitarPedido() {
   });
 
   // Redireccionar si no está autenticado o no es vendedora
-  if (status === "loading") {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-lg">Cargando...</div>
@@ -47,7 +47,7 @@ export default function SolicitarPedido() {
     );
   }
 
-  if (!session || session.user?.role !== "vendedora") {
+  if (!user || user.role !== "vendedora") {
     router.push("/login");
     return null;
   }
@@ -212,8 +212,8 @@ export default function SolicitarPedido() {
     try {
       const dataToSend = {
         ...formData,
-        vendedora: session.user?.name || session.user?.email,
-        correoVendedora: session.user?.email,
+        vendedora: user.name || user.email,
+      correoVendedora: user.email,
       };
 
       const response = await fetch("/api/pedidos", {
@@ -333,7 +333,7 @@ export default function SolicitarPedido() {
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-white mb-2">Nuevo Pedido</h1>
             <p className="text-purple-200">
-              Vendedora: {session.user?.name || session.user?.email}
+              Vendedora: {user.name || user.email}
             </p>
           </div>
 

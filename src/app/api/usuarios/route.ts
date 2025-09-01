@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getTokenFromCookies, verifyToken } from "@/lib/jwt";
 import { UserModel, UserRole } from "@/models/User";
 
 // GET - Obtener todos los usuarios
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
+    const cookieHeader = request.headers.get('cookie');
+    const token = getTokenFromCookies(cookieHeader);
+    const payload = verifyToken(token || '');
 
-    if (!session || !session.user) {
+    if (!payload) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
     // Solo administradoras pueden ver la lista de usuarios
-    if (session.user.role !== "administradora") {
+    if (payload.role !== "administradora") {
       return NextResponse.json(
         { error: "No tienes permisos para acceder a esta información" },
         { status: 403 }
@@ -37,14 +39,16 @@ export async function GET() {
 // POST - Crear nuevo usuario
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth();
+    const cookieHeader = request.headers.get('cookie');
+    const token = getTokenFromCookies(cookieHeader);
+    const payload = verifyToken(token || '');
 
-    if (!session || !session.user) {
+    if (!payload) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
     // Solo administradoras pueden crear usuarios
-    if (session.user.role !== "administradora") {
+    if (payload.role !== "administradora") {
       return NextResponse.json(
         { error: "No tienes permisos para crear usuarios" },
         { status: 403 }
@@ -99,14 +103,21 @@ export async function POST(request: NextRequest) {
 // DELETE - Eliminar usuario
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await auth();
-
-    if (!session || !session.user) {
+    const cookieHeader = request.headers.get('cookie');
+    const token = getTokenFromCookies(cookieHeader);
+    
+    if (!token) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
+    const payload = await verifyToken(token);
+    
+    if (!payload) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
     // Solo administradoras pueden eliminar usuarios
-    if (session.user.role !== "administradora") {
+    if (payload.role !== "administradora") {
       return NextResponse.json(
         { error: "No tienes permisos para eliminar usuarios" },
         { status: 403 }
@@ -124,7 +135,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // No permitir que se elimine a sí mismo
-    if (userId === session.user.id) {
+    if (userId === payload.userId) {
       return NextResponse.json(
         { error: "No puedes eliminarte a ti mismo" },
         { status: 400 }

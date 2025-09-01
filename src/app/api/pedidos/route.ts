@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getTokenFromCookies, verifyToken } from "@/lib/jwt";
 import { PedidoModel } from "@/models/Pedido";
 
 export async function POST(request: NextRequest) {
   try {
     // Verificar autenticación
-    const session = await auth();
+    const cookieHeader = request.headers.get('cookie');
+    const token = getTokenFromCookies(cookieHeader);
+    const payload = verifyToken(token || '');
 
-    if (!session || !session.user) {
+    if (!payload) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
     // Verificar que sea vendedora
-    if (session.user.role !== "vendedora") {
+    if (payload.role !== "vendedora") {
       return NextResponse.json(
         { error: "Solo las vendedoras pueden crear pedidos" },
         { status: 403 }
@@ -104,7 +106,7 @@ export async function POST(request: NextRequest) {
     }));
 
     // Crear el pedido
-    const vendedoraFinal = vendedora || session.user.email || session.user.name || "Vendedora";
+    const vendedoraFinal = vendedora || payload.email || payload.name || "Vendedora";
     
     const resultado = await PedidoModel.crearPedido({
       productos: productosFormateados,
@@ -115,7 +117,7 @@ export async function POST(request: NextRequest) {
       precioTotal: parseFloat(precioTotal),
       abonodinero: parseFloat(abonodinero),
       vendedora: vendedoraFinal,
-      correoVendedora: correoVendedora || session.user.email,
+      correoVendedora: correoVendedora || payload.email,
       fechaEntregaDeseada: fechaEntregaDeseada ? new Date(fechaEntregaDeseada) : undefined,
     });
 
@@ -144,9 +146,11 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth();
+    const cookieHeader = request.headers.get('cookie');
+    const token = getTokenFromCookies(cookieHeader);
+    const payload = verifyToken(token || '');
     
-    if (!session || !session.user) {
+    if (!payload) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
@@ -158,7 +162,7 @@ export async function GET(request: NextRequest) {
 
     let result;
 
-    if (session.user.role === "administradora") {
+    if (payload.role === "administradora") {
       // Las administradoras pueden ver todos los pedidos
       if (paginated) {
         result = await PedidoModel.obtenerTodosPedidosPaginado(page, limit);
@@ -166,14 +170,14 @@ export async function GET(request: NextRequest) {
         const pedidos = await PedidoModel.obtenerTodosPedidos();
         result = { pedidos };
       }
-    } else if (session.user.role === "vendedora") {
+    } else if (payload.role === "vendedora") {
       // Las vendedoras solo ven sus propios pedidos
       // Buscar por email, name o cualquier combinación
       const criteriosBusqueda = [
-        session.user.email,
-        session.user.name,
-        session.user.email || session.user.name,
-        session.user.name || session.user.email
+        payload.email,
+        payload.name,
+        payload.email || payload.name,
+        payload.name || payload.email
       ].filter((criterio): criterio is string => Boolean(criterio));
       
       if (paginated && criteriosBusqueda.length > 0) {

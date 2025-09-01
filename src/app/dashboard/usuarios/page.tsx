@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useRequireRole, useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { UserWithoutPassword } from "@/models/User";
@@ -30,7 +30,8 @@ interface FormData {
 }
 
 export default function UsuariosPage() {
-  const { data: session } = useSession();
+  const { user, loading: authLoading } = useRequireRole("administradora");
+  const { logout } = useAuth();
   const router = useRouter();
   const [usuarios, setUsuarios] = useState<UserWithoutPassword[]>([]);
   const [loading, setLoading] = useState(true);
@@ -157,12 +158,12 @@ export default function UsuariosPage() {
   };
 
   useEffect(() => {
-    if (session?.user?.role === "administradora") {
+    if (user?.role === "administradora") {
       fetchUsuarios();
     } else {
       setLoading(false);
     }
-  }, [session, fetchUsuarios]);
+  }, [user, fetchUsuarios]);
 
   if (loading) {
     return (
@@ -172,7 +173,7 @@ export default function UsuariosPage() {
     );
   }
 
-  if (session?.user?.role !== "administradora") {
+  if (user?.role !== "administradora") {
     router.push("/dashboard");
     return null;
   }
@@ -233,7 +234,7 @@ export default function UsuariosPage() {
         </nav>
         <div className="absolute bottom-4 left-4 right-4">
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => logout()}
             className="w-full bg-red-600/20 text-red-300 px-4 py-3 rounded-lg hover:bg-red-600/30 transition-colors duration-200 border border-red-500/30"
           >
             Cerrar Sesión
@@ -410,7 +411,7 @@ export default function UsuariosPage() {
                             </div>
                           </div>
                           <div className="ml-4">
-                            {usuario._id?.toString() !== session?.user?.id && (
+                            {usuario._id?.toString() !== user?.id && (
                               <button
                                 onClick={() =>
                                   handleDeleteUser(

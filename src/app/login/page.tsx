@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -9,7 +9,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { login, loading } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,32 +20,20 @@ export default function Login() {
       return;
     }
     
-    try {
-      setLoading(true);
-      setError("");
-      
-      const result = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
-      });
-      
-      if (result?.error) {
-        setError("Credenciales incorrectas");
-        setLoading(false);
-        return;
-      }
-      
+    setError("");
+    
+    const result = await login(email, password);
+    
+    if (result.success) {
       // Redirigir según el rol (el middleware se encargará)
       router.push("/");
       router.refresh();
-      
-    } catch (error) {
-      console.error("Error al iniciar sesión:", error);
-      setError("Error al iniciar sesión. Inténtalo de nuevo.");
-      setLoading(false);
+    } else {
+      setError(result.error || "Error al iniciar sesión");
     }
   };
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 py-12 px-4 sm:px-6 lg:px-8">
@@ -111,6 +99,8 @@ export default function Login() {
               {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
             </button>
           </div>
+          
+
           
           <div className="text-center text-sm text-purple-200">
             ¿No tienes una cuenta?{" "}

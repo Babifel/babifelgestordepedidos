@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useRequireAuth, useAuth } from "@/hooks/useAuth";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -39,7 +39,8 @@ interface Pedido {
 }
 
 export default function DetallesPedidoPage() {
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading } = useRequireAuth();
+  const { logout } = useAuth();
   const router = useRouter();
   const params = useParams();
   const pedidoId = params.id as string;
@@ -74,14 +75,14 @@ export default function DetallesPedidoPage() {
       }
     };
 
-    if (status === "loading") return;
+    if (authLoading) return;
 
-    if (!session) {
+    if (!user) {
       router.push("/login");
       return;
     }
 
-    if (session.user?.role !== "vendedora") {
+    if (user.role !== "vendedora") {
       router.push("/pedidos");
       return;
     }
@@ -89,7 +90,7 @@ export default function DetallesPedidoPage() {
     if (pedidoId) {
       fetchPedido();
     }
-  }, [session, status, router, pedidoId]);
+  }, [user, authLoading, router, pedidoId]);
 
   const getEstadoColor = (estado: string) => {
     switch (estado) {
@@ -108,7 +109,7 @@ export default function DetallesPedidoPage() {
     }
   };
 
-  if (status === "loading" || loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white">
         <span className="loader"></span>
@@ -116,7 +117,7 @@ export default function DetallesPedidoPage() {
     );
   }
 
-  if (!session || session.user?.role !== "vendedora") {
+  if (!user || user.role !== "vendedora") {
     return null;
   }
 
@@ -209,7 +210,7 @@ export default function DetallesPedidoPage() {
         </nav>
         <div className="absolute bottom-4 left-4 right-4">
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => logout()}
             className="w-full bg-red-600/20 text-red-300 px-4 py-3 rounded-lg hover:bg-red-600/30 transition-colors duration-200 border border-red-500/30"
           >
             Cerrar Sesión
