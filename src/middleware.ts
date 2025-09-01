@@ -10,15 +10,13 @@ export async function middleware(request: NextRequest) {
   const token = getTokenFromCookies(cookieHeader);
   
   // Rutas públicas (no requieren autenticación)
-  const publicRoutes = ["/login", "/register"];
+  const publicRoutes = ["/", "/login", "/register"];
 
-  // Otras rutas públicas
-  if (publicRoutes.includes(pathname)) {
-    return NextResponse.next();
-  }
-
-  // Si no hay token, redirigir a login
+  // Si no hay token, permitir acceso a rutas públicas
   if (!token) {
+    if (publicRoutes.includes(pathname)) {
+      return NextResponse.next();
+    }
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -31,8 +29,8 @@ export async function middleware(request: NextRequest) {
 
   const userRole = payload.role;
 
-  // Ruta raíz - redirigir según el rol
-  if (pathname === "/") {
+  // Si está autenticado y trata de acceder a rutas públicas, redirigir según rol
+  if (publicRoutes.includes(pathname)) {
     if (userRole === "administradora") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     } else if (userRole === "vendedora") {

@@ -51,6 +51,7 @@ export default function DashboardPage() {
   const { logout } = useAuth();
   const router = useRouter();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const [allPedidos, setAllPedidos] = useState<Pedido[]>([]); // Para los gráficos
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -64,6 +65,24 @@ export default function DashboardPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [itemsPerPage] = useState(20);
 
+
+  const fetchAllPedidosForCharts = useCallback(async () => {
+    try {
+      const response = await fetch('/api/pedidos', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAllPedidos(data.pedidos || []);
+      }
+    } catch (error) {
+      console.error('Error al obtener todos los pedidos:', error);
+    }
+  }, []);
 
   const fetchPedidos = useCallback(
     async (page = 1, append = false) => {
@@ -89,6 +108,11 @@ export default function DashboardPage() {
           setTotalPedidos(data.total || 0);
           setCurrentPage(page);
 
+          // Si es la primera página, también obtener todos los pedidos para los gráficos
+          if (page === 1 && !append) {
+            fetchAllPedidosForCharts();
+          }
+
           const totalLoaded = append
             ? pedidos.length + newPedidos.length
             : newPedidos.length;
@@ -105,7 +129,7 @@ export default function DashboardPage() {
         if (append) setLoadingMore(false);
       }
     },
-    [itemsPerPage, pedidos.length] // dependencias reales
+    [itemsPerPage, pedidos.length, fetchAllPedidosForCharts] // dependencias reales
   );
 
 
@@ -165,7 +189,7 @@ export default function DashboardPage() {
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
 
-    const pedidosDelMes = pedidos.filter((pedido) => {
+    const pedidosDelMes = allPedidos.filter((pedido) => {
       const fechaPedido = new Date(pedido.fechaCreacion);
       return (
         fechaPedido.getMonth() === currentMonth &&
@@ -173,6 +197,19 @@ export default function DashboardPage() {
         pedido.estado !== "devolucion"
       );
     });
+
+    // Si no hay pedidos, devolver datos de ejemplo para mostrar el gráfico
+    if (pedidosDelMes.length === 0) {
+      return [
+        { dia: "Día 1", pedidos: 0, cantidades: 0 },
+        { dia: "Día 5", pedidos: 0, cantidades: 0 },
+        { dia: "Día 10", pedidos: 0, cantidades: 0 },
+        { dia: "Día 15", pedidos: 0, cantidades: 0 },
+        { dia: "Día 20", pedidos: 0, cantidades: 0 },
+        { dia: "Día 25", pedidos: 0, cantidades: 0 },
+        { dia: "Día 30", pedidos: 0, cantidades: 0 },
+      ];
+    }
 
     // Agrupar por día del mes
     const datosPorDia: { [key: string]: number } = {};
@@ -217,7 +254,7 @@ export default function DashboardPage() {
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
 
-    const pedidosDelMes = pedidos.filter((pedido) => {
+    const pedidosDelMes = allPedidos.filter((pedido) => {
       const fechaPedido = new Date(pedido.fechaCreacion);
       return (
         fechaPedido.getMonth() === currentMonth &&
@@ -237,6 +274,18 @@ export default function DashboardPage() {
       }
     });
 
+    // Si no hay pedidos, mostrar datos de ejemplo
+    if (pedidosDelMes.length === 0) {
+      const chartData = [
+        {
+          name: "Sin datos disponibles",
+          value: 1,
+          color: "#6b7280",
+        },
+      ];
+      return { chartData, totalEntregado: 0 };
+    }
+
     const chartData = [
       {
         name: "Pedidos Entregados",
@@ -249,6 +298,20 @@ export default function DashboardPage() {
         color: "#6b7280",
       },
     ].filter((item) => item.value > 0);
+
+    // Si no hay datos después del filtro, mostrar mensaje
+    if (chartData.length === 0) {
+      return {
+        chartData: [
+          {
+            name: "Sin datos disponibles",
+            value: 1,
+            color: "#6b7280",
+          },
+        ],
+        totalEntregado: 0,
+      };
+    }
 
     return { chartData, totalEntregado };
   };

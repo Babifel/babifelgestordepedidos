@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRequireRole, useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { UserWithoutPassword } from "@/models/User";
 import Modal from "@/components/Modal";
@@ -30,9 +29,9 @@ interface FormData {
 }
 
 export default function UsuariosPage() {
-  const { user, loading: authLoading } = useRequireRole("administradora");
+  const { user } = useRequireRole("administradora");
   const { logout } = useAuth();
-  const router = useRouter();
+
   const [usuarios, setUsuarios] = useState<UserWithoutPassword[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -171,11 +170,6 @@ export default function UsuariosPage() {
         <div className="text-lg text-white">Cargando usuarios...</div>
       </div>
     );
-  }
-
-  if (user?.role !== "administradora") {
-    router.push("/dashboard");
-    return null;
   }
 
   return (
