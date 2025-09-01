@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import Babifel from "@/assets/babifel-original.png";
 
 export default function Home() {
   return (
@@ -42,7 +43,7 @@ export default function Home() {
             <div className="flex justify-center lg:justify-end">
               <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-purple-500/20 shadow-2xl p-8">
                 <Image
-                  src="/babifel-original.png"
+                  src={Babifel}
                   alt="Babifel Logo"
                   width={400}
                   height={300}
