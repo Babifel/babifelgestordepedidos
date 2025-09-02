@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTokenFromCookies, verifyToken } from '@/lib/jwt';
+import { getTokenFromCookies, verifyToken, isTokenExpired } from '@/lib/jwt';
 import { getMongoDb } from '@/lib/mongodb';
 import { UserModel } from '@/models/User';
 
@@ -13,6 +13,22 @@ export async function GET(request: NextRequest) {
         { error: 'No autorizado' },
         { status: 401 }
       );
+    }
+
+    // Verificar si el token está expirado antes de intentar verificarlo
+    if (isTokenExpired(token)) {
+      const response = NextResponse.json(
+        { error: 'Token expirado' },
+        { status: 401 }
+      );
+      // Limpiar cookie expirada
+      response.cookies.set('auth-token', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 0
+      });
+      return response;
     }
 
     const payload = verifyToken(token);

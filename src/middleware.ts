@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getTokenFromCookies, decodeTokenPayload } from "@/lib/jwt";
+import { getTokenFromCookies, decodeTokenPayload, isTokenExpired } from "@/lib/jwt";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -20,11 +20,31 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  // Verificar si el token está expirado
+  if (isTokenExpired(token)) {
+    // Token expirado, eliminar cookie y redirigir a la ruta inicial
+    const response = NextResponse.redirect(new URL("/", request.url));
+    response.cookies.set('auth-token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0
+    });
+    return response;
+  }
+
   // Decodificar el token para obtener el rol
   const payload = decodeTokenPayload(token);
   if (!payload) {
-    // Token inválido, redirigir a login
-    return NextResponse.redirect(new URL("/login", request.url));
+    // Token inválido, eliminar cookie y redirigir a la ruta inicial
+    const response = NextResponse.redirect(new URL("/", request.url));
+    response.cookies.set('auth-token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 0
+    });
+    return response;
   }
 
   const userRole = payload.role;
