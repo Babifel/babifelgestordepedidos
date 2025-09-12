@@ -214,6 +214,8 @@ export default function SolicitarPedido() {
         ...formData,
         vendedora: user.name || user.email,
         correoVendedora: user.email,
+        precioTotal: Number(formData.precioTotal),
+        abonodinero: Number(formData.abonodinero),
       };
 
       const response = await fetch("/api/pedidos", {

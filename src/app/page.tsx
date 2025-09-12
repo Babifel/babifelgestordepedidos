@@ -174,12 +174,6 @@ export default function Home() {
               © 2024 Babifel Fábrica Textil - Sistema CRM para gestión de
               pedidos Desarrollado por @juanperezzdp
             </p>
-            <Link
-              href="https://www.linkedin.com/in/juanperezjp"
-              className="text-purple-300 text-sm"
-            >
-              Desarrollado por @juanperezzdp
-            </Link>
           </div>
         </div>
       </div>

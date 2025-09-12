@@ -51,7 +51,7 @@ export default function DashboardPage() {
   const { logout } = useAuth();
   const router = useRouter();
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
-  const [allPedidos, setAllPedidos] = useState<Pedido[]>([]); // Para los gráficos
+  const [allPedidos, setAllPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -65,13 +65,12 @@ export default function DashboardPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [itemsPerPage] = useState(20);
 
-
   const fetchAllPedidosForCharts = useCallback(async () => {
     try {
-      const response = await fetch('/api/pedidos', {
-        credentials: 'include',
+      const response = await fetch("/api/pedidos", {
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
@@ -80,7 +79,7 @@ export default function DashboardPage() {
         setAllPedidos(data.pedidos || []);
       }
     } catch (error) {
-      console.error('Error al obtener todos los pedidos:', error);
+      console.error("Error al obtener todos los pedidos:", error);
     }
   }, []);
 
@@ -91,9 +90,9 @@ export default function DashboardPage() {
 
         const url = `/api/pedidos?paginated=true&page=${page}&limit=${itemsPerPage}`;
         const response = await fetch(url, {
-          credentials: 'include',
+          credentials: "include",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         });
 
@@ -131,8 +130,6 @@ export default function DashboardPage() {
     },
     [itemsPerPage, pedidos.length, fetchAllPedidosForCharts] // dependencias reales
   );
-
-
 
   useEffect(() => {
     if (authLoading) return;
@@ -421,10 +418,11 @@ export default function DashboardPage() {
           <div className="mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
+                <h1 className="text-4xl font-bold text-white mb-2">
+                  Dashboard
+                </h1>
                 <p className="text-purple-200">Bienvenida, {user.name}</p>
               </div>
-
             </div>
           </div>
 
@@ -648,10 +646,13 @@ export default function DashboardPage() {
                             Estado
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Fecha
+                            Tipo envio
+                          </th>{" "}
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Entrega deseada
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Entrega Deseada
+                            Fecha de creación
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Acciones
@@ -728,10 +729,8 @@ export default function DashboardPage() {
                                 {pedido.estado}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
-                              {new Date(
-                                pedido.fechaCreacion
-                              ).toLocaleDateString()}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                              {pedido.tipoEnvio}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
                               {pedido.fechaEntregaDeseada
@@ -740,6 +739,12 @@ export default function DashboardPage() {
                                   ).toLocaleDateString()
                                 : "No especificada"}
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-purple-200">
+                              {new Date(
+                                pedido.fechaCreacion
+                              ).toLocaleDateString()}
+                            </td>
+
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <Link
                                 href={`/dashboard/detallesdelpedido/${pedido._id}`}
