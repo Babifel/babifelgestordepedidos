@@ -216,6 +216,26 @@ export class PedidoModel {
     }
   }
 
+  static async actualizarPedidoPorId(
+    pedidoId: string,
+    datosActualizados: Partial<Omit<Pedido, "_id" | "fechaCreacion" | "estado">>
+  ): Promise<Pedido | null> {
+    try {
+      const collection = await PedidoModel.getCollection();
+
+      const result = await collection.findOneAndUpdate(
+        { _id: new ObjectId(pedidoId) },
+        { $set: datosActualizados },
+        { returnDocument: "after" }
+      );
+
+      return result || null;
+    } catch (error) {
+      console.error("Error al actualizar pedido:", error);
+      return null;
+    }
+  }
+
   static async obtenerPedidoPorId(pedidoId: string): Promise<Pedido | null> {
     try {
       const collection = await PedidoModel.getCollection();
@@ -309,6 +329,7 @@ export const Pedido = {
   findAll: PedidoModel.obtenerTodosPedidos,
   findAllPaginated: PedidoModel.obtenerTodosPedidosPaginado,
   updateEstado: PedidoModel.actualizarEstadoPedido,
+  updateById: PedidoModel.actualizarPedidoPorId,
   findById: PedidoModel.obtenerPedidoPorId,
   findByIdAndVendedora: PedidoModel.obtenerPedidoPorIdYVendedora,
   findLastThreeMonths: PedidoModel.obtenerPedidosUltimosTresMeses,
