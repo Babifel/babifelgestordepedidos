@@ -100,6 +100,64 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PATCH - Activar/Desactivar usuario
+export async function PATCH(request: NextRequest) {
+  try {
+    const cookieHeader = request.headers.get('cookie');
+    const token = getTokenFromCookies(cookieHeader);
+    const payload = verifyToken(token || '');
+
+    if (!payload) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    // Solo administradoras pueden activar/desactivar usuarios
+    if (payload.role !== "administradora") {
+      return NextResponse.json(
+        { error: "No tienes permisos para modificar usuarios" },
+        { status: 403 }
+      );
+    }
+
+    const { userId, isActive } = await request.json();
+
+    if (!userId || typeof isActive !== 'boolean') {
+      return NextResponse.json(
+        { error: "ID de usuario y estado son requeridos" },
+        { status: 400 }
+      );
+    }
+
+    // No permitir que se desactive a sí mismo
+    if (userId === payload.userId && !isActive) {
+      return NextResponse.json(
+        { error: "No puedes desactivarte a ti mismo" },
+        { status: 400 }
+      );
+    }
+
+    const resultado = await UserModel.updateUserStatus(userId, isActive);
+
+    if (!resultado) {
+      return NextResponse.json(
+        { error: "Usuario no encontrado" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Usuario ${isActive ? 'activado' : 'desactivado'} exitosamente`,
+    });
+  } catch (error) {
+    console.error("Error al actualizar estado del usuario:", error);
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE - Eliminar usuario
 export async function DELETE(request: NextRequest) {
   try {

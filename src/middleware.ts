@@ -47,6 +47,51 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Verificar si el usuario está activo y si la sesión ha expirado (2 días)
+  try {
+    const { UserModel } = await import('@/models/User');
+    const user = await UserModel.findById(payload.userId);
+    
+    if (!user) {
+      // Usuario no encontrado, eliminar cookie
+      const response = NextResponse.redirect(new URL("/", request.url));
+      response.cookies.set('auth-token', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 0
+      });
+      return response;
+    }
+
+    // Verificar si el usuario está activo (solo para vendedoras)
+    if (!user.isActive && user.role !== 'administradora') {
+      const response = NextResponse.redirect(new URL("/", request.url));
+      response.cookies.set('auth-token', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 0
+      });
+      return response;
+    }
+
+    // Verificar expiración de sesión (2 días)
+    if (await UserModel.isSessionExpired(user._id?.toString() || '')) {
+      const response = NextResponse.redirect(new URL("/", request.url));
+      response.cookies.set('auth-token', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 0
+      });
+      return response;
+    }
+  } catch (error) {
+    console.error('Error verificando usuario en middleware:', error);
+    // En caso de error, permitir continuar pero registrar el error
+  }
+
   const userRole = payload.role;
 
   // Si está autenticado y trata de acceder a rutas públicas, redirigir según rol

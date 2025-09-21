@@ -34,6 +34,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verificar si el usuario está activo (solo para vendedoras)
+    if (!user.isActive && user.role !== 'administradora') {
+      return NextResponse.json(
+        { error: 'Tu cuenta ha sido desactivada. Contacta al administrador.' },
+        { status: 403 }
+      );
+    }
+
+    // Actualizar último login
+    await UserModel.updateLastLogin(user._id?.toString() || '');
+
     const token = signToken({
       userId: user._id?.toString() || '',
       email: user.email,
@@ -54,12 +65,12 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    // Establecer cookie con el token
+    // Establecer cookie con el token (2 días)
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 8 // 8 días
+      maxAge: 60 * 60 * 24 * 2 // 2 días
     });
 
     return response;

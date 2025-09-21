@@ -103,11 +103,13 @@ export default function Login() {
 
           
           <div className="text-center text-sm text-purple-200">
-            ¿No tienes una cuenta?{" "}
-            <Link href="/register" className="font-medium text-purple-300 hover:text-purple-200 transition-colors">
-              Regístrate aquí
-            </Link>
-          </div>
+  ¿No tienes una cuenta?{" "}
+  <span className="font-semibold text-purple-300">
+    Contacta a la administradora
+  </span>{" "}
+  para que te cree una.
+</div>
+
         </form>
       </div>
     </div>

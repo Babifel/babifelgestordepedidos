@@ -10,6 +10,8 @@ export interface User {
   email: string;
   password: string;
   role: UserRole;
+  isActive?: boolean;
+  lastLoginAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -19,6 +21,8 @@ export interface UserWithoutPassword {
   name: string;
   email: string;
   role: UserRole;
+  isActive?: boolean;
+  lastLoginAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -43,6 +47,8 @@ export const UserModel = {
     const newUser: User = {
       ...userData,
       password: hashedPassword,
+      isActive: true,
+      lastLoginAt: undefined,
       createdAt: now,
       updatedAt: now,
     };
@@ -91,11 +97,19 @@ export const UserModel = {
       return null;
     }
 
+    // Verificar si el usuario está activo
+    if (user.isActive === false) {
+      throw new Error("Usuario desactivado");
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       return null;
     }
+
+    // Actualizar último login
+    await this.updateLastLogin(user._id!.toString());
 
     return user;
   },
@@ -120,5 +134,50 @@ export const UserModel = {
       .collection("users")
       .deleteOne({ _id: new ObjectId(userId) });
     return result.deletedCount === 1;
+  },
+
+  async updateUserStatus(userId: string, isActive: boolean): Promise<boolean> {
+    const db = await getMongoDb();
+    const result = await db
+      .collection("users")
+      .updateOne(
+        { _id: new ObjectId(userId) },
+        { 
+          $set: { 
+            isActive,
+            updatedAt: new Date()
+          }
+        }
+      );
+    return result.modifiedCount === 1;
+  },
+
+  async updateLastLogin(userId: string): Promise<boolean> {
+    const db = await getMongoDb();
+    const result = await db
+      .collection("users")
+      .updateOne(
+        { _id: new ObjectId(userId) },
+        { 
+          $set: { 
+            lastLoginAt: new Date(),
+            updatedAt: new Date()
+          }
+        }
+      );
+    return result.modifiedCount === 1;
+  },
+
+  async isSessionExpired(userId: string): Promise<boolean> {
+    const user = await this.findById(userId);
+    if (!user || !user.lastLoginAt) {
+      return true;
+    }
+
+    const now = new Date();
+    const lastLogin = new Date(user.lastLoginAt);
+    const twoDaysInMs = 2 * 24 * 60 * 60 * 1000; // 2 días en milisegundos
+    
+    return (now.getTime() - lastLogin.getTime()) > twoDaysInMs;
   },
 };

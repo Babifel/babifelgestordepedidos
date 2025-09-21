@@ -25,6 +25,7 @@ interface FormData {
   nombre: string;
   email: string;
   password: string;
+  confirmPassword: string;
   role: "vendedora" | "administradora";
 }
 
@@ -40,6 +41,7 @@ export default function UsuariosPage() {
     nombre: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: "vendedora",
   });
   const [modal, setModal] = useState<ModalState>({
@@ -92,6 +94,12 @@ export default function UsuariosPage() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validar que las contraseñas coincidan
+    if (formData.password !== formData.confirmPassword) {
+      showModal("error", "Error", "Las contraseñas no coinciden");
+      return;
+    }
+
     try {
       const response = await fetch("/api/usuarios", {
         method: "POST",
@@ -106,7 +114,7 @@ export default function UsuariosPage() {
 
       if (data.success) {
         showModal("success", "Éxito", "Usuario creado exitosamente");
-        setFormData({ nombre: "", email: "", password: "", role: "vendedora" });
+        setFormData({ nombre: "", email: "", password: "", confirmPassword: "", role: "vendedora" });
         setShowCreateForm(false);
         fetchUsuarios();
       } else {
@@ -124,6 +132,38 @@ export default function UsuariosPage() {
       userId,
       userName,
     });
+  };
+
+  const handleToggleUserStatus = async (userId: string, currentStatus: boolean, userName: string) => {
+    try {
+      const response = await fetch('/api/usuarios', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          isActive: !currentStatus,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showModal(
+          'success',
+          'Éxito',
+          `Usuario ${userName} ${!currentStatus ? 'activado' : 'desactivado'} exitosamente`
+        );
+        fetchUsuarios();
+      } else {
+        showModal('error', 'Error', data.error || 'Error al cambiar estado del usuario');
+      }
+    } catch (error) {
+      console.error('Error al cambiar estado del usuario:', error);
+      showModal('error', 'Error', 'Error al cambiar estado del usuario');
+    }
   };
 
   const confirmDeleteUser = async () => {
@@ -331,6 +371,20 @@ export default function UsuariosPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-purple-200 mb-2">
+                        Confirmar Contraseña
+                      </label>
+                      <input
+                        type="password"
+                        value={formData.confirmPassword}
+                        onChange={(e) =>
+                          setFormData({ ...formData, confirmPassword: e.target.value })
+                        }
+                        className="w-full px-3 py-2 bg-gray-800/50 border border-purple-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-purple-200 mb-2">
                         Rol
                       </label>
                       <select
@@ -395,6 +449,17 @@ export default function UsuariosPage() {
                                   ? "Administradora"
                                   : "Vendedora"}
                               </span>
+                              {usuario.role !== "administradora" && (
+                                <span
+                                  className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                                    usuario.isActive
+                                      ? "bg-green-600/20 text-green-300 border border-green-500/30"
+                                      : "bg-red-600/20 text-red-300 border border-red-500/30"
+                                  }`}
+                                >
+                                  {usuario.isActive ? "Activo" : "Inactivo"}
+                                </span>
+                              )}
                               <span className="text-purple-200 text-xs">
                                 {usuario.createdAt
                                   ? new Date(
@@ -404,19 +469,39 @@ export default function UsuariosPage() {
                               </span>
                             </div>
                           </div>
-                          <div className="ml-4">
+                          <div className="ml-4 flex space-x-2">
                             {usuario._id?.toString() !== user?.id && (
-                              <button
-                                onClick={() =>
-                                  handleDeleteUser(
-                                    usuario._id?.toString() || "",
-                                    usuario.name
-                                  )
-                                }
-                                className="text-red-400 hover:text-red-300 transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-red-600/20 border border-red-500/30"
-                              >
-                                Eliminar
-                              </button>
+                              <>
+                                {usuario.role !== "administradora" && (
+                                  <button
+                                    onClick={() =>
+                                      handleToggleUserStatus(
+                                        usuario._id?.toString() || "",
+                                        usuario.isActive || false,
+                                        usuario.name
+                                      )
+                                    }
+                                    className={`px-3 py-2 rounded-lg transition-colors duration-200 text-xs font-medium border ${
+                                      usuario.isActive
+                                        ? "text-orange-400 hover:text-orange-300 hover:bg-orange-600/20 border-orange-500/30"
+                                        : "text-green-400 hover:text-green-300 hover:bg-green-600/20 border-green-500/30"
+                                    }`}
+                                  >
+                                    {usuario.isActive ? "Desactivar" : "Activar"}
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() =>
+                                    handleDeleteUser(
+                                      usuario._id?.toString() || "",
+                                      usuario.name
+                                    )
+                                  }
+                                  className="text-red-400 hover:text-red-300 transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-red-600/20 border border-red-500/30 text-xs font-medium"
+                                >
+                                  Eliminar
+                                </button>
+                              </>
                             )}
                           </div>
                         </div>
