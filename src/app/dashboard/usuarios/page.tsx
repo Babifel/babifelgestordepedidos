@@ -114,7 +114,13 @@ export default function UsuariosPage() {
 
       if (data.success) {
         showModal("success", "Éxito", "Usuario creado exitosamente");
-        setFormData({ nombre: "", email: "", password: "", confirmPassword: "", role: "vendedora" });
+        setFormData({
+          nombre: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          role: "vendedora",
+        });
         setShowCreateForm(false);
         fetchUsuarios();
       } else {
@@ -134,13 +140,17 @@ export default function UsuariosPage() {
     });
   };
 
-  const handleToggleUserStatus = async (userId: string, currentStatus: boolean, userName: string) => {
+  const handleToggleUserStatus = async (
+    userId: string,
+    currentStatus: boolean,
+    userName: string
+  ) => {
     try {
-      const response = await fetch('/api/usuarios', {
-        method: 'PATCH',
-        credentials: 'include',
+      const response = await fetch("/api/usuarios", {
+        method: "PATCH",
+        credentials: "include",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           userId,
@@ -152,17 +162,23 @@ export default function UsuariosPage() {
 
       if (data.success) {
         showModal(
-          'success',
-          'Éxito',
-          `Usuario ${userName} ${!currentStatus ? 'activado' : 'desactivado'} exitosamente`
+          "success",
+          "Éxito",
+          `Usuario ${userName} ${
+            !currentStatus ? "activado" : "desactivado"
+          } exitosamente`
         );
         fetchUsuarios();
       } else {
-        showModal('error', 'Error', data.error || 'Error al cambiar estado del usuario');
+        showModal(
+          "error",
+          "Error",
+          data.error || "Error al cambiar estado del usuario"
+        );
       }
     } catch (error) {
-      console.error('Error al cambiar estado del usuario:', error);
-      showModal('error', 'Error', 'Error al cambiar estado del usuario');
+      console.error("Error al cambiar estado del usuario:", error);
+      showModal("error", "Error", "Error al cambiar estado del usuario");
     }
   };
 
@@ -299,19 +315,19 @@ export default function UsuariosPage() {
             </div>
 
             <div className="bg-gray-800/60 backdrop-blur-sm shadow-xl rounded-xl border border-purple-500/20 mb-8">
-              <div className="px-6 py-4 border-b border-purple-500/20">
-                <div className="flex justify-between items-center">
+              <div className="px-4 sm:px-6 py-4 border-b border-purple-500/20">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div>
-                    <h2 className="text-2xl font-medium text-white">
+                    <h2 className="text-xl sm:text-2xl font-medium text-white">
                       Lista de Usuarios
                     </h2>
-                    <p className="text-lg text-purple-200">
+                    <p className="text-base sm:text-lg text-purple-200">
                       Gestiona los usuarios del sistema
                     </p>
                   </div>
                   <button
                     onClick={() => setShowCreateForm(!showCreateForm)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors duration-200 font-medium"
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition-colors duration-200 font-medium text-sm sm:text-base whitespace-nowrap"
                   >
                     {showCreateForm ? "Cancelar" : "Crear Usuario"}
                   </button>
@@ -319,7 +335,7 @@ export default function UsuariosPage() {
               </div>
 
               {showCreateForm && (
-                <div className="px-6 py-4 bg-gray-800/40 border-b border-purple-500/20">
+                <div className="px-4 sm:px-6 py-4 bg-gray-800/40 border-b border-purple-500/20">
                   <h3 className="text-lg font-semibold text-white mb-4">
                     Crear Nuevo Usuario
                   </h3>
@@ -377,7 +393,10 @@ export default function UsuariosPage() {
                         type="password"
                         value={formData.confirmPassword}
                         onChange={(e) =>
-                          setFormData({ ...formData, confirmPassword: e.target.value })
+                          setFormData({
+                            ...formData,
+                            confirmPassword: e.target.value,
+                          })
                         }
                         className="w-full px-3 py-2 bg-gray-800/50 border border-purple-500/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         required
@@ -415,7 +434,7 @@ export default function UsuariosPage() {
                 </div>
               )}
 
-              <div className="px-6 py-4">
+              <div className="px-4 sm:px-6 py-4">
                 {usuarios.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="text-purple-200">
@@ -427,17 +446,17 @@ export default function UsuariosPage() {
                     {usuarios.map((usuario) => (
                       <div
                         key={usuario._id?.toString()}
-                        className="bg-gray-800/40 backdrop-blur-sm border border-purple-500/30 rounded-lg p-4 hover:bg-gray-800/60 transition-colors duration-200"
+                        className="bg-gray-800/40 backdrop-blur-sm border border-purple-500/30 rounded-lg p-3 sm:p-4 hover:bg-gray-800/60 transition-colors duration-200"
                       >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h3 className="text-white font-medium text-lg">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 sm:gap-4">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-white font-medium text-lg truncate">
                               {usuario.name}
                             </h3>
-                            <p className="text-purple-200 text-sm">
+                            <p className="text-purple-200 text-sm truncate">
                               {usuario.email}
                             </p>
-                            <div className="mt-2 flex items-center space-x-4">
+                            <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-4">
                               <span
                                 className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
                                   usuario.role === "administradora"
@@ -469,7 +488,7 @@ export default function UsuariosPage() {
                               </span>
                             </div>
                           </div>
-                          <div className="ml-4 flex space-x-2">
+                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 sm:ml-4 mt-3 sm:mt-0">
                             {usuario._id?.toString() !== user?.id && (
                               <>
                                 {usuario.role !== "administradora" && (
@@ -481,13 +500,15 @@ export default function UsuariosPage() {
                                         usuario.name
                                       )
                                     }
-                                    className={`px-3 py-2 rounded-lg transition-colors duration-200 text-xs font-medium border ${
+                                    className={`px-3 py-2 rounded-lg transition-colors duration-200 text-xs font-medium border whitespace-nowrap ${
                                       usuario.isActive
                                         ? "text-orange-400 hover:text-orange-300 hover:bg-orange-600/20 border-orange-500/30"
                                         : "text-green-400 hover:text-green-300 hover:bg-green-600/20 border-green-500/30"
                                     }`}
                                   >
-                                    {usuario.isActive ? "Desactivar" : "Activar"}
+                                    {usuario.isActive
+                                      ? "Desactivar"
+                                      : "Activar"}
                                   </button>
                                 )}
                                 <button
@@ -497,7 +518,7 @@ export default function UsuariosPage() {
                                       usuario.name
                                     )
                                   }
-                                  className="text-red-400 hover:text-red-300 transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-red-600/20 border border-red-500/30 text-xs font-medium"
+                                  className="text-red-400 hover:text-red-300 transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-red-600/20 border border-red-500/30 text-xs font-medium whitespace-nowrap"
                                 >
                                   Eliminar
                                 </button>
