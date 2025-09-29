@@ -125,10 +125,12 @@ export default function PedidosPage() {
           setError(""); // Limpiar errores previos
 
           // Verificar si hay más pedidos para cargar
-          const totalLoaded = append
-            ? pedidos.length + newPedidos.length
-            : newPedidos.length;
-          setHasMorePedidos(totalLoaded < (data.total || 0));
+          // Preferir el uso de totalPages cuando esté disponible desde el API
+          const total = data.total || 0;
+          const totalPages = data.totalPages || Math.ceil(total / itemsPerPage);
+          // Si estamos en modo append, la siguiente página existe solo si page < totalPages
+          // Esto evita falsos negativos por cálculos basados en pedidos.length desfasados
+          setHasMorePedidos(page < totalPages);
         } else {
           const errorText = await response.text();
           console.error("Error response:", errorText);
@@ -147,7 +149,7 @@ export default function PedidosPage() {
         }
       }
     },
-    [itemsPerPage, pedidos.length]
+    [itemsPerPage]
   );
 
   useEffect(() => {
@@ -172,16 +174,7 @@ export default function PedidosPage() {
     fetchPedidos(false, 1);
   }, [user, authLoading, router, fetchPedidos]);
 
-  // Polling para actualizar pedidos cada 30 segundos
-  useEffect(() => {
-    if (!user || user.role !== "vendedora") return;
-
-    const interval = setInterval(() => {
-      fetchPedidos(true, 1, false); // true indica que es una actualización automática
-    }, 30000); // 30 segundos
-
-    return () => clearInterval(interval);
-  }, [user, fetchPedidos]);
+  // Eliminado: polling automático cada 30 segundos
 
   // Función para refrescar manualmente
   const handleManualRefresh = () => {

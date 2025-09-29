@@ -181,8 +181,8 @@ export async function GET(request: NextRequest) {
       ].filter((criterio): criterio is string => Boolean(criterio));
       
       if (paginated && criteriosBusqueda.length > 0) {
-        // Para vendedoras, usar el primer criterio válido para paginación
-        result = await PedidoModel.obtenerPedidosPorVendedoraPaginado(criteriosBusqueda[0], page, limit);
+        // Para vendedoras, usar todos los criterios válidos (email y/o nombre) en paginación
+        result = await PedidoModel.obtenerPedidosPorVendedoraPaginado(criteriosBusqueda, page, limit);
       } else {
         const pedidos = await PedidoModel.obtenerPedidosPorVendedoraMultiple(criteriosBusqueda);
         result = { pedidos };

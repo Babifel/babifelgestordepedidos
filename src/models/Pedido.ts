@@ -81,7 +81,7 @@ export class PedidoModel {
   }
 
   static async obtenerPedidosPorVendedoraPaginado(
-    vendedora: string,
+    vendedora: string | string[],
     page: number = 1,
     limit: number = 20
   ): Promise<{ pedidos: Pedido[]; total: number; totalPages: number }> {
@@ -89,8 +89,11 @@ export class PedidoModel {
       const collection = await PedidoModel.getCollection();
       const skip = (page - 1) * limit;
 
-      // Crear criterios de búsqueda múltiples
-      const criterios = [vendedora];
+      // Normalizar criterios: aceptar string o arreglo y filtrar valores vacíos
+      const criterios = Array.isArray(vendedora)
+        ? vendedora.filter((c) => Boolean(c))
+        : [vendedora].filter((c) => Boolean(c));
+
       const query = {
         $or: [
           { vendedora: { $in: criterios } },

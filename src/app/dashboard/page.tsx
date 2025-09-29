@@ -112,11 +112,13 @@ export default function DashboardPage() {
             fetchAllPedidosForCharts();
           }
 
-          const totalLoaded = append
-            ? pedidos.length + newPedidos.length
-            : newPedidos.length;
+          // Determinar si hay más páginas usando totalPages desde la API cuando esté disponible
+          const totalPages =
+            (typeof data.totalPages === "number" && data.totalPages > 0)
+              ? data.totalPages
+              : Math.ceil((data.total || 0) / itemsPerPage);
 
-          setHasMorePedidos(totalLoaded < (data.total || 0));
+          setHasMorePedidos(page < totalPages);
         } else {
           setError("Error al cargar los pedidos");
         }
@@ -128,7 +130,7 @@ export default function DashboardPage() {
         if (append) setLoadingMore(false);
       }
     },
-    [itemsPerPage, pedidos.length, fetchAllPedidosForCharts] // dependencias reales
+    [itemsPerPage, fetchAllPedidosForCharts] // mantener estable aunque cambie la cantidad cargada
   );
 
   useEffect(() => {
